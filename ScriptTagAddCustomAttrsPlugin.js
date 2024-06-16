@@ -46,9 +46,7 @@ class ScriptTagAddCustomAttrsPlugin {
             }
             const newData = {
               assetTags: {
-                scripts: [
-                  ...oriData
-                ]
+                scripts: oriData || []
               }
             }
             setCustomAttrs(this.options, newData)
@@ -61,7 +59,7 @@ class ScriptTagAddCustomAttrsPlugin {
       //   PluginName,
       //   (data, cb) => {
       //     console.log('🐷🐷🐷', data.bodyTags)
-      //     // console.log('ddddd++', data.a)
+      //     // console.log('d++', data.a)
       //     cb(null, data)
       //   }
       // )
@@ -70,7 +68,7 @@ class ScriptTagAddCustomAttrsPlugin {
       //   PluginName,
       //   (data, cb) => {
       //     console.log('🐷🐷🐷', data)
-      //     console.log('ddddd++', data.bodyTags[0])
+      //     console.log('d++', data.bodyTags[0])
       //     // data.headTags[0].attributes['data-retry'] = 2
       //     cb(null, data)
       //   }
