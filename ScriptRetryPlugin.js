@@ -95,7 +95,6 @@ function injectCode (data, cb) {
   const insertStr = fs.readFileSync(filePath, { encoding: 'utf-8' })
 
   const node = parse(`<script>${insertStr}</script>`);
-  console.log('🚀++', node)
   headEl.childNodes.unshift(node.removeWhitespace())
 
   const newHtmlStr = root.toString()

@@ -12,6 +12,8 @@
   }
   function scriptLoadFailedHandler(event) {
     var target = event.target;
+    const attrs = target.attributes
+    console.log('++++++++', attrs)
     var _target$src = target.src,
       src = _target$src === void 0 ? '' : _target$src;
     // console.log('🐷🐷', target.tagName)
@@ -19,11 +21,27 @@
     var retry = target.dataset.retry ? +target.dataset.retry : 0;
     var leftRetryTimes = getRetryTimes(src, retry);
     if (leftRetryTimes > 0) {
-      document.write("<scr" + "ipt src = " + src + "></scr" + "ipt>")
-
+      // document.write("<scr" + "ipt src = " + src + "></scr" + "ipt>")
+      const str = getScriptStr(attrs)
+      document.write(str)
       reduceRetryTimes(src);
     }
   }
+
+  function getScriptStr (attrs) {
+    let str = "<script"
+    Array.prototype.slice.call(attrs).forEach(attr => {
+      str += " "
+      if (attr.value !== '') {
+        str += attr.name + '=' + "\"" + attr.value + "\""
+      } else {
+        str += attr.name
+      }
+    })
+    str += "></scr" + "ipt>"
+    return str
+  }
+
   function getRetryTimes(src, retry) {
     if (map[src] === void 0) {
       map[src] = retry;
@@ -47,6 +65,8 @@
 
   exports.default = register;
   exports.register = register;
+
+  register()
 
   Object.defineProperty(exports, '__esModule', { value: true });
 }));
