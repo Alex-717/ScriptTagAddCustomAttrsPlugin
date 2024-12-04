@@ -1,6 +1,6 @@
 
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const ScriptTagAddCustomAttrsPlugin = require('./ScriptTagAddCustomAttrsPlugin')
+const ScriptRetryPlugin = require('./ScriptRetryPlugin')
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -10,17 +10,13 @@ const config = {
       filename: 'index.html',
       template: './public/index.html'
     }),
-    new ScriptTagAddCustomAttrsPlugin([
+    new ScriptRetryPlugin([
       {
         target: 'main',
         attrs : [
           {
             customKey: 'data-retry',
-            value: '2'
-          },
-          {
-            customKey: 'data-v',
-            value: 'ahlfasdf'
+            value: '1'
           }
         ]
       }

@@ -1,6 +1,8 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const PluginName = 'ScriptTagAddCustomAttrsPlugin'
+const PluginName = 'ScriptRetryPlugin'
 const path = require('path')
+
+const fs = require('fs')
 
 class ScriptTagAddCustomAttrsPlugin {
   constructor (options) {
@@ -8,28 +10,11 @@ class ScriptTagAddCustomAttrsPlugin {
   }
   apply (compiler) {
     compiler.hooks.compilation.tap(PluginName, (compilation) => {
-
-      // HtmlWebpackPlugin.getHooks(compilation).beforeAssetTagGeneration.tapAsync(
-      //   PluginName,
-      //   (data, cb) => {
-      //     console.log('🐷', data)
-      //     cb(null, data)
-      //   }
-      // )
-       
-      // compilation.plugin(
-      //   'html-webpack-plugin-before-html-processing',
-      //   (data, cb) => {
-      //     data.html += 'The Magic Footer'
-   
-      //     cb(null, data)
-      //   }
-      // )
       if (HtmlWebpackPlugin.getHooks) {
         HtmlWebpackPlugin.getHooks(compilation).alterAssetTags.tapAsync(
           PluginName,
           (data, cb) => {
-            // console.log('🐷🐷', data)
+            fs.writeFile('./data.json', JSON.stringify(data), ()=>{})
             setCustomAttrs(this.options, data)
             cb(null, data)
           }
@@ -39,7 +24,6 @@ class ScriptTagAddCustomAttrsPlugin {
         compilation.plugin(
           'html-webpack-plugin-alter-asset-tags',
           (data) => {
-            console.log('😂', data)
             let oriData = data.head
             if ([true, 'body'].includes(data.plugin.options.inject)) {
               oriData = data.body
@@ -53,36 +37,19 @@ class ScriptTagAddCustomAttrsPlugin {
           }
         )
       }
-      
-
-      // HtmlWebpackPlugin.getHooks(compilation).alterAssetTagGroups.tapAsync(
-      //   PluginName,
-      //   (data, cb) => {
-      //     console.log('🐷🐷🐷', data.bodyTags)
-      //     // console.log('d++', data.a)
-      //     cb(null, data)
-      //   }
-      // )
-
-      // HtmlWebpackPlugin.getHooks(compilation).afterTemplateExecution.tapAsync(
-      //   PluginName,
-      //   (data, cb) => {
-      //     console.log('🐷🐷🐷', data)
-      //     console.log('d++', data.bodyTags[0])
-      //     // data.headTags[0].attributes['data-retry'] = 2
-      //     cb(null, data)
-      //   }
-      // )
     })
   }
 }
 
 function setCustomAttrs (options, data) {
+  // console.log('🚀---', options)
   const { scripts = null } = data.assetTags || {}
-
+  
   if (Array.isArray(scripts) && scripts.length) {
     scripts.forEach(item => {
       const targetOption = getTargetOption(item, options)
+      console.log('🚀--targetOption-', targetOption)
+
       if (!targetOption) return
       const { attrs = [] } = targetOption
       attrs.forEach(it => {
