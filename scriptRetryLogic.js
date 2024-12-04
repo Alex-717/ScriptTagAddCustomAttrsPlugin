@@ -19,8 +19,8 @@
     var retry = target.dataset.retry ? +target.dataset.retry : 0;
     var leftRetryTimes = getRetryTimes(src, retry);
     if (leftRetryTimes > 0) {
-      // console.dir(target)
-      document.write("<script src=\"".concat(src, "\"></script>"));
+      document.write("<scr" + "ipt src = " + src + "></scr" + "ipt>")
+
       reduceRetryTimes(src);
     }
   }
@@ -49,5 +49,4 @@
   exports.register = register;
 
   Object.defineProperty(exports, '__esModule', { value: true });
-
 }));
