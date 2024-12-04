@@ -2,10 +2,11 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const PluginName = 'ScriptRetryPlugin'
 const path = require('path')
 
-const fs = require('fs')
-
-class ScriptTagAddCustomAttrsPlugin {
-  constructor (options) {
+class ScriptRetryPlugin {
+  constructor (options = []) {
+    if (!Array.isArray(options)) {
+      throw(new Error('🚀🚀--ScriptRetryPlugin error~~: options is an Array'))
+    }
     this.options = options
   }
   apply (compiler) {
@@ -14,7 +15,6 @@ class ScriptTagAddCustomAttrsPlugin {
         HtmlWebpackPlugin.getHooks(compilation).alterAssetTags.tapAsync(
           PluginName,
           (data, cb) => {
-            fs.writeFile('./data.json', JSON.stringify(data), ()=>{})
             setCustomAttrs(this.options, data)
             cb(null, data)
           }
@@ -41,40 +41,27 @@ class ScriptTagAddCustomAttrsPlugin {
   }
 }
 
-function setCustomAttrs (options, data) {
-  // console.log('🚀---', options)
+const defaultOptions = [
+  {
+    key: 'data-retry',
+    value: 1
+  }
+]
+
+function setCustomAttrs (options = [], data) {
+  if(!options.find(item => item.key === 'data-retry')) {
+    options.push(...defaultOptions)
+  }
+
   const { scripts = null } = data.assetTags || {}
-  
+
   if (Array.isArray(scripts) && scripts.length) {
     scripts.forEach(item => {
-      const targetOption = getTargetOption(item, options)
-      console.log('🚀--targetOption-', targetOption)
-
-      if (!targetOption) return
-      const { attrs = [] } = targetOption
-      attrs.forEach(it => {
-        item.attributes[it.customKey] = it.value
+      options.forEach(it => {
+        item.attributes[it.key] = it.value
       })
     })
   }
 }
 
-function getTargetOption (item, options) {
-  if (item.tagName !== 'script') return void 0
-
-  const fileName = getFileName(item.attributes.src)
-  const target = options.find(it => {
-    // return fileName.startsWith(it.target)
-    return fileName.indexOf(it.target) > -1
-  })
-  // console.log('targetOption', target)
-  return target
-}
-
-function getFileName (src) {
-  const name = path.basename(src, path.extname(src))
-  console.log('fileName', name)
-  return name
-}
-
-module.exports = ScriptTagAddCustomAttrsPlugin
+module.exports = ScriptRetryPlugin

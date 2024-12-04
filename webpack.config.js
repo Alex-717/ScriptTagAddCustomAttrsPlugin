@@ -10,17 +10,7 @@ const config = {
       filename: 'index.html',
       template: './public/index.html'
     }),
-    new ScriptRetryPlugin([
-      {
-        target: 'main',
-        attrs : [
-          {
-            customKey: 'data-retry',
-            value: '1'
-          }
-        ]
-      }
-    ])
+    new ScriptRetryPlugin()
   ]
 }
 
