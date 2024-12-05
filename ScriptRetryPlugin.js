@@ -7,10 +7,20 @@ const fs = require('fs');
 const isJS = (file) => /\.js(\?[^.]+)?$/.test(file);
 const isHtml = (file) => /\.html$/.test(file);
 
+const defaultOptions = [
+  {
+    key: 'data-retry',
+    value: 1
+  }
+]
+
 class ScriptRetryPlugin {
   constructor (options = []) {
     if (!Array.isArray(options)) {
       throw(new Error('🚀🚀--ScriptRetryPlugin error~~: options is an Array'))
+    }
+    if(!options.find(item => item.key === 'data-retry')) {
+      options.push(...defaultOptions)
     }
     this.options = options
   }
@@ -115,23 +125,19 @@ class ScriptRetryPlugin {
             var __main_chunks__ = ${JSON.stringify(mainChunks)}
           `
           data.html = injectCode(data.html, code)
+
+          // TODO: 下面是老版本的html-webpack-plugin才有的，新的需要兼容下
+          // 因为异步chunk是通过appendChild添加到页面上的，重写appendChild，也异步chunk加上data-retry属性
+          
+
         }
       )
     }
   }
 }
 
-const defaultOptions = [
-  {
-    key: 'data-retry',
-    value: 1
-  }
-]
-function setCustomAttrs (options = [], data) {
-  if(!options.find(item => item.key === 'data-retry')) {
-    options.push(...defaultOptions)
-  }
 
+function setCustomAttrs (options = [], data) {
   const { scripts = null } = data.assetTags || {}
 
   if (Array.isArray(scripts) && scripts.length) {
