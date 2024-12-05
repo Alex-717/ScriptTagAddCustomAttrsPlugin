@@ -2,7 +2,10 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const PluginName = 'ScriptRetryPlugin'
 const path = require('path')
 const { parse } = require('node-html-parser')
-const fs = require('fs')
+const fs = require('fs');
+
+const isJS = (file) => /\.js(\?[^.]+)?$/.test(file);
+const isHtml = (file) => /\.html$/.test(file);
 
 class ScriptRetryPlugin {
   constructor (options = []) {
@@ -19,6 +22,34 @@ class ScriptRetryPlugin {
       // 往html的head标签中注入script重试逻辑
       this.injectRetryLogic(compilation)
     })
+
+    compiler.hooks.emit.tapAsync(PluginName, (compilation, callback) => {
+      const allChunks = []
+      for (let chunk of compilation.chunks) {
+        const { files } = chunk
+        if (!Array.isArray(files) || (Array.isArray(files) && !files.length)) continue
+        files.forEach(file => {
+          if (isJS(file)) {
+            allChunks.push(path.basename(file))
+          }
+        })
+      }
+      const code = `
+        var __all_chunks__ = ${JSON.stringify(allChunks)}
+      `
+     
+      for (const [key, value] of Object.entries(compilation.assets)) {
+        if (isHtml(key)) {
+          const htmlStr = value.source()
+          const newHtmlStr = injectCode(htmlStr, code)
+          compilation.assets[key] = {
+            source: () => newHtmlStr,
+            size: () => newHtmlStr.length
+          }
+        }
+      }
+      callback()
+    });
   }
   setAttrs (compilation) {
     if (HtmlWebpackPlugin.getHooks) {
@@ -50,16 +81,42 @@ class ScriptRetryPlugin {
   }
   injectRetryLogic (compilation) {
     if (HtmlWebpackPlugin.getHooks) {
-
       HtmlWebpackPlugin.getHooks(compilation).afterTemplateExecution.tapAsync(
         PluginName,
         (data, cb) => {
-          injectCode(data, cb)
+          const filePath = path.resolve(__dirname, './scriptRetryLogic.js')
+          const jsCode = fs.readFileSync(filePath, { encoding: 'utf-8' })
+          const newHTMLStr = injectCode(data.html, jsCode)
+          data.html = newHTMLStr
+          cb()
         }
       )
-
     } else {
       // TODO: 兼容老版本webpack
+      compilation.plugin(
+        'html-webpack-plugin-before-html-processing',
+        (data) => {
+          const filePath = path.resolve(__dirname, './scriptRetryLogic.js')
+          const jsCode = fs.readFileSync(filePath, { encoding: 'utf-8' })
+          const newHTMLStr = injectCode(data.html, jsCode)
+          data.html = newHTMLStr
+
+          // TODO: 下面是老版本的html-webpack-plugin才有的，新的需要兼容下
+          const mainChunks = []
+          const { assets: { chunks } } = data
+          for (const [key, value] of Object.entries(chunks)) {
+            const { entry } = value
+            if (isJS(entry)) {
+              mainChunks.push(path.basename(entry))
+            }
+          }
+
+          const code = `
+            var __main_chunks__ = ${JSON.stringify(mainChunks)}
+          `
+          data.html = injectCode(data.html, code)
+        }
+      )
     }
   }
 }
@@ -86,20 +143,16 @@ function setCustomAttrs (options = [], data) {
   }
 }
 
-function injectCode (data, cb) {
-  const { html: htmlStr } = data
+function injectCode (htmlStr, str) {
   const root = parse(htmlStr)
   // TODO: 如果html没有head标签，手动给他创建一个
   const headEl = root.getElementsByTagName('head')[0]
-  const filePath = path.resolve(__dirname, './scriptRetryLogic.js')
-  const insertStr = fs.readFileSync(filePath, { encoding: 'utf-8' })
 
-  const node = parse(`<script>${insertStr}</script>`);
+  const node = parse(`<script>${str}</script>`);
   headEl.childNodes.unshift(node.removeWhitespace())
 
   const newHtmlStr = root.toString()
-  data.html = newHtmlStr
-  cb(null, data)
+  return newHtmlStr
 }
 
 module.exports = ScriptRetryPlugin
