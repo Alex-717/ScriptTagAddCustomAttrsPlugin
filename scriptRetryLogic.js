@@ -20,12 +20,37 @@
       src = _target$src === void 0 ? '' : _target$src;
     // console.log('🐷🐷', target.tagName)
     if (!isScriptLoadFailError(event)) return;
+    var isAsyncchunk = target.dataset.asyncchunk ? true : false
     var retry = target.dataset.retry ? +target.dataset.retry : 0;
     var leftRetryTimes = getRetryTimes(src, retry);
-    if (leftRetryTimes > 0) {
+    if (leftRetryTimes <= 0) return 
+    // 不是异步加载的js，直接注入到html的script标签，使用document.write的方法是重新加载
+    if (!isAsyncchunk) {
       // document.write("<scr" + "ipt src = " + src + "></scr" + "ipt>")
       const str = getScriptStr(attrs)
       document.write(str)
+      reduceRetryTimes(src);
+    } else {
+      // 异步加载的js，一般是通过document.head.appendChild来实现
+      // 重试的话，不能通过document.write的方式，实验过，使用document.write会重写整个html
+      var map = window['__async_chunk_retry_map___']
+      if (!map[target.src]) {
+        // 收集这个东西的onload方法
+        map[target.src] = {
+          'load': target.onload,
+          'fail': target.onfail,
+        }
+      }
+      
+      var script = document.createElement('script')
+      script.onload = map[target.src]['load']
+      script.onfail = map[target.src]['fail']
+      Array.prototype.slice.call(attrs).forEach(attr => {
+        if (attr.name !== 'data-retry' && attr.name !== 'data-asyncchunk') {
+          script.setAttribute(attr.name, attr.value)
+        }
+      })
+      document.head.appendChild(script)
       reduceRetryTimes(src);
     }
   }

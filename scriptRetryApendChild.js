@@ -26,7 +26,8 @@
 
     // 是异步加载的js
     if (newChild.tagName.toLowerCase() === 'script' && isAsyncScript(newChild.src)) {
-      
+      newChild.setAttribute('data-retry', window['__retry_times__'] || 1)
+      newChild.setAttribute('data-asyncchunk', true)
     }
 
     return originalAppendChild.call(this, newChild);

@@ -44,8 +44,11 @@ class ScriptRetryPlugin {
           }
         })
       }
+      const retryTimes = this.options.filter(item => item.key === 'data-retry')[0].value
       const code = `
-        var __all_chunks__ = ${JSON.stringify(allChunks)}
+        var __all_chunks__ = ${JSON.stringify(allChunks)};
+        var __retry_times__ = ${retryTimes};
+        var __async_chunk_retry_map___ = {}
       `
      
       for (const [key, value] of Object.entries(compilation.assets)) {
@@ -128,8 +131,7 @@ class ScriptRetryPlugin {
 
           // TODO: 下面是老版本的html-webpack-plugin才有的，新的需要兼容下
           // 因为异步chunk是通过appendChild添加到页面上的，重写appendChild，也异步chunk加上data-retry属性
-          
-
+      
         }
       )
     }
